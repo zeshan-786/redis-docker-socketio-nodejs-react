@@ -1,65 +1,85 @@
-import React, { useState, useEffect } from "react";
-import socketIOClient from "socket.io-client";
+import React, {useState, useEffect} from "react";
+import {socket} from '../../config'
 import Events from "../../components/Events/events";
 import searchIcon from "../../assets/images/searchIcon.svg";
 import "./EventsView.css";
 
-const socket = socketIOClient("http://localhost:5000");
+
+let events = [];
+const EventsView = () => {
+    const [filteredEvents, setFilteredEvents] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [loadEvents, setLoadEvents] = useState(true);
+
+    useEffect(() => {
+        getEvents()
+        // CLEAN UP THE EFFECT
+        return () => socket.disconnect();
+        // eslint-disable-next-line
+    }, []);
 
 
-const EventsView = (props) => {
-  const [events, setEvents] = useState([]);
-  const [loadEvents, setLoadEvents] = useState(true);
-
-  const getEvents = () => {
-    socket.on("FromAPI", (data) => {
-      let newData = events;
-      newData.push(JSON.parse(data));
-      setEvents(newData);
-      console.log(newData);
-    });
-  }
-  useEffect(() => {
-    getEvents()
-    // CLEAN UP THE EFFECT
-    return () => socket.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!loadEvents) {
-      socket.disconnect();
+    const getEvents = () => {
+        socket.on("FromAPI", (data) => {
+            data = JSON.parse(data);
+            let newData = events;
+            newData.unshift(data);
+            events = [...newData];
+            if (searchKeyword) {
+                if ((data.type.toLowerCase().indexOf(searchKeyword) !== -1 || (data.event && data.event.toLowerCase().indexOf(searchKeyword) !== -1))) {
+                    setFilteredEvents([...newData]);
+                }
+            } else {
+                setFilteredEvents([...newData]);
+            }
+        });
     }
-  }, [loadEvents]);
+    const liveEvents = () => {
+        setLoadEvents(true);
+        socket.connect();
+    };
 
-  const liveEvents = () => {
-    setLoadEvents(true);
-  };
+    const pauseEvents = () => {
+        setLoadEvents(false)
+        socket.disconnect();
+    };
 
-  const pauseEvents = () => {
-    setLoadEvents(false);
-  };
+    const searchEventHandler = (keyword) => {
+        keyword = keyword.toLowerCase();
+        setSearchKeyword(keyword)
+        let filterEvents = filterByEventOrType(keyword);
+        setFilteredEvents([...filterEvents])
+    };
 
-  return (
-    <div className="wrapper">
-      {/* LOAD OR STOP THE EVENTS */}
-      <div className="header">
-            <div className="flex">
+
+    const filterByEventOrType = (keyword) => {
+        return events.filter(each => each.type.toLowerCase().indexOf(keyword) !== -1 || (each.event && each.event.toLowerCase().indexOf(keyword) !== -1))
+    }
+
+    return (
+        <div className="wrapper">
+            {/* LOAD OR STOP THE EVENTS */}
+            <div className="header">
                 <div className="flex">
-                    <button id="headerButtonInactive" onClick={liveEvents}>Live</button>
-                    <button id="headerButtonActive" onClick={pauseEvents}>Pause</button>
-                </div>
-                <div id="searchDiv">
-                    <img id="searchIcon" src={searchIcon}  alt="Search icon" />
-                    <input type="text" placeholder="Type to search" />
-                </div>
-                <div>
-
+                    <div className="flex w-10">
+                        <button className={loadEvents ? "active" : "Inactive"} id="headerButtonInactive"
+                                onClick={liveEvents}>Live
+                        </button>
+                        <button className={!loadEvents ? "active" : "Inactive"} id="headerButtonActive"
+                                onClick={pauseEvents}>Pause
+                        </button>
+                    </div>
+                    <div id="searchDiv" className="w-86">
+                        <img id="searchIcon" src={searchIcon} alt="Search icon"/>
+                        <input type="text" defaultValue={searchKeyword ? searchKeyword : ""} onChange={(event) => {
+                            searchEventHandler(event.target.value)
+                        }} placeholder="Type to search"/>
+                    </div>
                 </div>
             </div>
+            {filteredEvents && filteredEvents.length ? <Events events={filteredEvents}/> : <p>No events Found</p>}
         </div>
-      {events.length ? <Events events={events} /> : <p>No events</p>}
-    </div>
-  );
+    );
 };
 
 export default EventsView;
