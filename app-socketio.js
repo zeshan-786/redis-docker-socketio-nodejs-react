@@ -24,10 +24,10 @@ const io = socket(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["my-custom-header"],
-    credentials: true
+    // allowedHeaders: ["my-custom-header"],
+    // credentials: true
   }
-});
+}); 
 
 io.on("connection", function (socket) {
   console.log("Client connected");
