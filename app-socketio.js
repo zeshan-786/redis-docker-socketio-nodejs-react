@@ -21,16 +21,12 @@ const server = app.listen(PORT, function () {
 
 // Socket setup
 const io = socket(server, {
-  handlePreflightRequest: (req, res) => {
-    const headers = {
-        "Access-Control-Allow-Methods": "*",
-      "Access-Control-Allow-Headers": "*",
-      "Access-Control-Allow-Origin": "*", //or the specific origin you want to give access to,
-      "Access-Control-Allow-Credentials": true,
-    };
-    res.writeHead(200, headers);
-    res.end();
-  },
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["my-custom-header"],
+    credentials: true
+  }
 });
 
 io.on("connection", function (socket) {
