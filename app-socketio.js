@@ -1,19 +1,28 @@
-require('dotenv').config()
+require("dotenv").config();
 const express = require("express"),
   socket = require("socket.io"),
+  path = require("path"),
   { createClient } = require("redis"),
   REDIS_HOST = process.env.REDIS_HOST || "localhost",
   REDIS_PORT = process.env.REDIS_PORT || "6379",
-  REDIS_CHANNEL =  process.env.REDIS_CHANNEL || "events",
+  REDIS_CHANNEL = process.env.REDIS_CHANNEL || "events",
   redis = createClient({ host: REDIS_HOST, port: REDIS_PORT }),
   cors = require("cors");
-  redis.on("connect", () => {
-    console.log("==> connected to redis");
-  });
+redis.on("connect", () => {
+  console.log("==> connected to redis");
+});
 // App setup
 const PORT = process.env.PORT || 5000;
 const app = express();
-app.use(cors());
+app
+  .use(cors())
+  .use(express.static(path.join(__dirname, "./redis-events/build")));
+
+// if invalid endpoint is called
+app.use("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "./redis-events/build"));
+});
+
 const server = app.listen(PORT, function () {
   console.log(`Listening on port ${PORT}`);
   console.log(`http://localhost:${PORT}`);
@@ -24,10 +33,8 @@ const io = socket(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST", "OPTIONS"],
-    // allowedHeaders: ["my-custom-header"],
-    // credentials: true
-  }
-}); 
+  },
+});
 
 io.on("connection", function (socket) {
   console.log("Client connected");
