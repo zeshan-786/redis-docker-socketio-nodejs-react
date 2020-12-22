@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.7"
 
 services:
   redis:
@@ -16,7 +16,7 @@ services:
     - redis
 
   redis-socketio-node-react-starter-app:
-    image: redis-socketio-node-react-starter-app:prod
+    image: zeshanmehmood/redis-socketio-node-react-starter-app:prod
     build: 
       context: ./
     container_name: redis-socketio-node-react-starter-app
@@ -34,3 +34,4 @@ services:
 
 volumes: 
   redis-socketio-node-react-starter-app:
+    
